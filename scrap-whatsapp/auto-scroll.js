@@ -57,10 +57,10 @@ function autoScrollWithInfiniteLoad(
 }
 
 // Usage
-const modalClass =
+modalClass =
   ".x1n2onr6.x1n2onr6.xupqr0c.x78zum5.x1r8uery.x1iyjqo2.xdt5ytf.x6ikm8r.x1odjw0f.x1hc1fzr.x1anedsm.x1280gxy";
-const modalContent = document.querySelector(modalClass);
-const autoScroll = autoScrollWithInfiniteLoad(
+modalContent = document.querySelector(modalClass);
+autoScroll = autoScrollWithInfiniteLoad(
   modalContent,
   GrabWhatsAppGroupParticipantsNumbers,
 );
