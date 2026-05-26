@@ -1,5 +1,3 @@
-teachersInformationTable = document.querySelector("#empTable");
-
 function downloadTableAsCSV(tableElement, filename = "table_data.csv") {
   // Convert table to CSV
   const rows = tableElement.querySelectorAll("tr");
@@ -9,8 +7,16 @@ function downloadTableAsCSV(tableElement, filename = "table_data.csv") {
     const rowData = [];
     const cells = row.querySelectorAll("td, th");
 
-    cells.forEach((cell) => {
-      let text = cell.textContent.trim();
+    cells.forEach((cell, idx) => {
+      let text = cell?.textContent?.trim();
+
+      // Checking for image src
+      if (idx == 1) {
+        const img = cell?.querySelector("img");
+        if (img) {
+          text = img?.src?.trim();
+        }
+      }
 
       // Escape quotes and wrap in quotes if needed
       if (text.includes(",") || text.includes('"') || text.includes("\n")) {
@@ -42,4 +48,9 @@ function downloadTableAsCSV(tableElement, filename = "table_data.csv") {
 }
 
 // Usage
-downloadTableAsCSV(teachersInformationTable, "exported_data.csv");
+teachersInformationTable = document.querySelector("#empTable");
+instituteName = document.querySelector("#select2-chosen-2").textContent;
+downloadTableAsCSV(
+  teachersInformationTable,
+  `${instituteName || "exported_data"}.csv`,
+);
