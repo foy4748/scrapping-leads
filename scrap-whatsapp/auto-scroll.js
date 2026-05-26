@@ -64,6 +64,9 @@ autoScroll = autoScrollWithInfiniteLoad(
   modalContent,
   GrabWhatsAppGroupParticipantsNumbers,
 );
+
+// In case of failure
+// autoScrollWithInfiniteLoad(document.querySelector(modalClass), GrabWhatsAppGroupParticipantsNumbers)
 autoScroll.start();
 
 // To stop later
