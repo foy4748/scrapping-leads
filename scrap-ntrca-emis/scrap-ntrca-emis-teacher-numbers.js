@@ -50,6 +50,7 @@ function downloadTableAsCSV(tableElement, filename = "table_data.csv") {
 // Usage
 teachersInformationTable = document.querySelector("#empTable");
 instituteName = document.querySelector("#select2-chosen-2").textContent;
+console.log(instituteName, "parsed done");
 downloadTableAsCSV(
   teachersInformationTable,
   `${instituteName || "exported_data"}.csv`,

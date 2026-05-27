@@ -14,6 +14,7 @@ const bengaliToEnglishNumeric = (str) => {
   return str.replace(/[০-৯]/g, (m) => map[m]);
 };
 
-console.log(bengaliToEnglishNumeric("১২৩৪৫৬৭৮৯০")); // "1234567890"
-console.log(bengaliToEnglishNumeric("মোবাইল নম্বর: ০১৭১২৩৪৫৬৭৮")); // "মোবাইল নম্বর: 01712345678"
-console.log(bengaliToEnglishNumeric("দাম: ৫০০ টাকা")); // "দাম: 500 টাকা"
+// Usage
+// console.log(bengaliToEnglishNumeric("১২৩৪৫৬৭৮৯০")); // "1234567890"
+// console.log(bengaliToEnglishNumeric("মোবাইল নম্বর: ০১৭১২৩৪৫৬৭৮")); // "মোবাইল নম্বর: 01712345678"
+// console.log(bengaliToEnglishNumeric("দাম: ৫০০ টাকা")); // "দাম: 500 টাকা"
