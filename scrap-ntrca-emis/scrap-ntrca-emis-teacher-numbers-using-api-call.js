@@ -50,6 +50,40 @@ function downloadJSONFile(jsonData, filename) {
   URL.revokeObjectURL(url);
 }
 
+function sanitizeFilename(filename) {
+  // Replace invalid Windows filename characters
+  const invalidChars = /[<>:"/\\|?*\x00-\x1f]/g;
+
+  // Also handle special cases
+  let safe = filename
+    // Replace invalid characters with underscore
+    .replace(invalidChars, "_")
+    // Replace colon (:) which is common in your data
+    .replace(/:/g, "_")
+    // Replace pipe (|)
+    .replace(/\|/g, "_")
+    // Replace multiple spaces with single space
+    .replace(/\s+/g, " ")
+    // Trim spaces from start and end
+    .trim()
+    // Limit filename length (Windows max is 255)
+    .substring(0, 200);
+
+  // Handle Bengali specific issues
+  safe = safe
+    // Remove any invisible/control characters
+    .replace(/[\u200B-\u200D\uFEFF]/g, "")
+    // Normalize Unicode (decompose combined characters)
+    .normalize("NFC");
+
+  // Ensure filename is not empty
+  if (!safe || safe === ".") {
+    safe = "unnamed_file";
+  }
+
+  return safe;
+}
+
 async function getInstitues(ZoneId) {
   const payload = new URLSearchParams({
     ZoneId,
@@ -82,7 +116,7 @@ async function getTeachersData(institutes) {
     // const csvData = convertToCSV(data);
     console.log(`Downloading - ${fileName}`);
     // downloadTableAsCSV(csvData, fileName + ".csv");
-    downloadJSONFile(data, fileName + ".json");
+    downloadJSONFile(data, sanitizeFilename(fileName) + ".json");
     // storage = {};
   }
 }
@@ -94,3 +128,13 @@ async function main() {
     await getTeachersData(institutes);
   }
 }
+
+// 1 - 3228 - BARISHAL;
+// 2 - 2911 - CHATTOGRAM;
+// 3 - 2469 - CUMILLA;
+// 4 - 4345 - DHAKA;
+// 5 - 4699 - KHULNA;
+// 6 - 3935 - MYMENSINGH;
+// 7 - 5485 - RAJSHAHI;
+// 8 - 5408 - RANGPUR;
+// 9 - 1578 - SYLHET;
