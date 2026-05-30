@@ -1,6 +1,6 @@
-// let institutes = [];
+import fs from "fs/promises";
 
-// storage = {};
+const failedIds = [];
 
 function convertToCSV(arr) {
   const array = [Object.keys(arr[0])].concat(arr);
@@ -116,18 +116,34 @@ async function getTeachersData(institutes) {
     // const csvData = convertToCSV(data);
     console.log(`Downloading - ${fileName}`);
     // downloadTableAsCSV(csvData, fileName + ".csv");
-    downloadJSONFile(data, sanitizeFilename(fileName) + ".json");
+    // downloadJSONFile(data, sanitizeFilename(fileName) + ".json");
     // storage = {};
+    fs.writeFile(
+      `..\\..\\ntrca-emis-leads\\teachers\\${sanitizeFilename(fileName)}.json`,
+      JSON.stringify(data),
+    )
+      .then(() => {
+        console.log(`✅ DOWNLOAD SUCCESS - ${fileName}.json`);
+      })
+      .catch((err) => {
+        if (err) {
+          console.log(`Error writing ${fileName}.json`, err);
+        }
+        failedIds.push(Number(singleInstitute.Id));
+      });
   }
+  console.log("failedIds", failedIds);
 }
 
 async function main() {
-  const ZoneIds = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+  const ZoneIds = ["6"];
   for (let ZoneId of ZoneIds) {
     const institutes = await getInstitues(ZoneId);
     await getTeachersData(institutes);
   }
 }
+
+main();
 
 // 1 - 3228 - BARISHAL;
 // 2 - 2911 - CHATTOGRAM;
