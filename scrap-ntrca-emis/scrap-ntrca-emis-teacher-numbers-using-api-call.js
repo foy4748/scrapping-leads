@@ -127,7 +127,7 @@ async function getTeachersData(institutes) {
       })
       .catch((err) => {
         if (err) {
-          console.log(`Error writing ${fileName}.json`, err);
+          console.log(`❌ Error writing ${fileName}.json`, err);
         }
         failedIds.push(Number(singleInstitute.Id));
       });
@@ -136,7 +136,7 @@ async function getTeachersData(institutes) {
 }
 
 async function main() {
-  const ZoneIds = ["6"];
+  const ZoneIds = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
   for (let ZoneId of ZoneIds) {
     const institutes = await getInstitues(ZoneId);
     await getTeachersData(institutes);

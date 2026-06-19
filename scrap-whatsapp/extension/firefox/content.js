@@ -1,0 +1,456 @@
+console.log("HIT");
+console.log("WhatsApp Extension Loaded");
+storage = new Map();
+ownNumber = "Enter Your Own Number";
+
+let activeAutoScroll = null;
+let globalIntervals = [];
+let globalObservers = [];
+
+function autoScrollWithInfiniteLoad(
+  modalContent,
+  callbackFn,
+  scrollSpeed = 100,
+) {
+  let scrolling = true;
+  let scrollInterval;
+
+  // Create observer to detect new content
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "childList" && mutation.addedNodes.length) {
+        // console.log("New content loaded, continuing scroll");
+        // New content added, ensure we keep scrolling
+        if (scrolling) {
+          scrollToBottom();
+        }
+      }
+    });
+  });
+
+  // Configure observer
+  observer.observe(modalContent, {
+    childList: true,
+    subtree: true,
+  });
+
+  globalObservers.push(observer);
+
+  function scrollToBottom() {
+    callbackFn();
+    if (!scrolling) return;
+
+    modalContent.scrollBy({
+      top: scrollSpeed,
+      behavior: "smooth",
+    });
+  }
+
+  function start() {
+    scrolling = true;
+    scrollInterval = setInterval(scrollToBottom, 20);
+    globalIntervals.push(scrollInterval);
+  }
+
+  function stop() {
+    scrolling = false;
+    if (scrollInterval) {
+      clearInterval(scrollInterval);
+      scrollInterval = null;
+    }
+    observer.disconnect();
+  }
+
+  return { start, stop };
+}
+
+function GrabWhatsAppGroupParticipantsNumbers() {
+  numberContainer = document.querySelector(
+    ".x9f619.x78zum5.xdt5ytf.x16w0wmm.x6ikm8r.x10wlt62.x1xn7y0n.x1uxb8k9.x1vmbcc8.x16xm01d.xs2e80n.x1n2onr6.x1iyjqo2.xs83m0k.x1l7klhg.xs8rnei.xexx8yu.xyri2b.x18d9i69.x1c1uobl.x1coevs8.x14z9mp.xui9b5u.x1lziwak.xg3pqpk.xusj4dd.x1a6k631.x1fwmvtr.x1n7bigs.x6ln8mz.x12v3509.xf35npv",
+  );
+
+  if (!numberContainer) return;
+
+  allRows = numberContainer.querySelectorAll(".x10l6tqk.xh8yej3.x1g42fcv");
+
+  for (let i = 0; i < allRows.length; i++) {
+    const singleRow = allRows[i];
+    const numberOwner = singleRow.querySelector(
+      '[data-testid="cell-frame-title"]',
+    );
+
+    if (numberOwner || numberOwner?.querySelector(".x78zum5")?.textContent) {
+      const numberOwnerStr =
+        numberOwner?.querySelector(".x78zum5")?.textContent;
+      let phoneNumber;
+      let name;
+
+      if (numberOwnerStr && numberOwnerStr[0] == "+")
+        phoneNumber = numberOwnerStr;
+      else {
+        name = numberOwnerStr;
+        const numberContainer = singleRow.querySelector(
+          "span.x1rg5ohu.x158ke7r.xdod15v",
+        );
+        phoneNumber = numberContainer?.textContent;
+      }
+
+      if (phoneNumber) {
+        const newEntry = {
+          name: name || "",
+          phoneNumber: phoneNumber,
+        };
+
+        // Check if my own number is included
+        if (newEntry?.phoneNumber?.includes(ownNumber)) continue;
+
+        storage.set(newEntry.phoneNumber, newEntry);
+      }
+    }
+  }
+}
+
+// Create floating button container
+function createButtonUI() {
+  const buttonContainer = document.createElement("div");
+  buttonContainer.id = "whatsapp-extension-buttons";
+  buttonContainer.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e0e0e0;
+  `;
+
+  // Close button (X)
+  const closeButton = document.createElement("button");
+  closeButton.textContent = "✕";
+  closeButton.id = "whatsapp-close-btn";
+  closeButton.style.cssText = `
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  `;
+  closeButton.onmouseover = () => {
+    closeButton.style.background = "#c82333";
+    closeButton.style.transform = "scale(1.1)";
+  };
+  closeButton.onmouseout = () => {
+    closeButton.style.background = "#dc3545";
+    closeButton.style.transform = "scale(1)";
+  };
+
+  const title = document.createElement("div");
+  title.textContent = "📱 WhatsApp Extractor";
+  title.style.cssText = `
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #075e54;
+  `;
+
+  const status = document.createElement("div");
+  status.id = "whatsapp-status";
+  status.textContent = "Ready";
+  status.style.cssText = `
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+  `;
+
+  const myButton = document.createElement("button");
+  myButton.textContent = "▶ Start Scrolling";
+  myButton.id = "whatsapp-start-btn";
+  myButton.style.cssText = `
+    background: #075e54;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    width: 100%;
+  `;
+  myButton.onmouseover = () => {
+    myButton.style.background = "#054740";
+  };
+  myButton.onmouseout = () => {
+    myButton.style.background = "#075e54";
+  };
+
+  const stopButton = document.createElement("button");
+  stopButton.textContent = "⏹ Stop Scrolling";
+  stopButton.id = "whatsapp-stop-btn";
+  stopButton.style.cssText = `
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    width: 100%;
+  `;
+  stopButton.onmouseover = () => {
+    stopButton.style.background = "#c82333";
+  };
+  stopButton.onmouseout = () => {
+    stopButton.style.background = "#dc3545";
+  };
+
+  const downloadButton = document.createElement("button");
+  downloadButton.textContent = "📥 Download JSON";
+  downloadButton.id = "whatsapp-download-btn";
+  downloadButton.style.cssText = `
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    width: 100%;
+  `;
+  downloadButton.onmouseover = () => {
+    downloadButton.style.background = "#218838";
+  };
+  downloadButton.onmouseout = () => {
+    downloadButton.style.background = "#28a745";
+  };
+
+  const countLabel = document.createElement("div");
+  countLabel.id = "whatsapp-count";
+  countLabel.textContent = "Contacts: 0";
+  countLabel.style.cssText = `
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+  `;
+
+  // Append all elements
+  buttonContainer.appendChild(closeButton);
+  buttonContainer.appendChild(title);
+  buttonContainer.appendChild(status);
+  buttonContainer.appendChild(myButton);
+  buttonContainer.appendChild(stopButton);
+  buttonContainer.appendChild(downloadButton);
+  buttonContainer.appendChild(countLabel);
+
+  document.body.appendChild(buttonContainer);
+
+  return {
+    container: buttonContainer,
+    closeBtn: closeButton,
+    startBtn: myButton,
+    stopBtn: stopButton,
+    downloadBtn: downloadButton,
+    status: status,
+    count: countLabel,
+  };
+}
+
+// Termination function
+function terminateEverything(ui) {
+  console.log("🛑 Terminating all processes...");
+
+  // Stop auto-scroll
+  if (activeAutoScroll) {
+    activeAutoScroll.stop();
+    activeAutoScroll = null;
+    console.log("✅ Auto-scroll stopped");
+  }
+
+  // Clear all intervals
+  globalIntervals.forEach((interval) => {
+    clearInterval(interval);
+  });
+  globalIntervals = [];
+  console.log("✅ All intervals cleared");
+
+  // Disconnect all observers
+  globalObservers.forEach((observer) => {
+    observer.disconnect();
+  });
+  globalObservers = [];
+  console.log("✅ All observers disconnected");
+
+  // Reset storage
+  storage = new Map();
+  console.log("✅ Storage reset");
+
+  // Update UI
+  if (ui) {
+    ui.status.textContent = "🧹 Terminated";
+    ui.status.style.color = "#dc3545";
+    ui.startBtn.textContent = "▶ Start Scrolling";
+    ui.startBtn.style.background = "#075e54";
+    ui.count.textContent = "Contacts: 0";
+  }
+
+  // Remove the container
+  const container = document.getElementById("whatsapp-extension-buttons");
+  if (container) {
+    container.remove();
+    console.log("✅ UI removed");
+  }
+
+  console.log("✅ All processes terminated!");
+}
+
+// Main observer to detect WhatsApp UI
+const mainObserver = new MutationObserver(() => {
+  const groupName =
+    document.querySelector(
+      ".x1iyjqo2.xs83m0k.x1t1x2f9.x1y1aw1k.x6ikm8r.x10wlt62.x1vvkbs.xyri2b.xngnso2.xgif2c7",
+    )?.textContent || "";
+  const participantsNumber =
+    parseInt(
+      document.querySelector(
+        "button.xjb2p0i.x1qlqyl8.x972fbf.x10w94by.x1qhh985.x14e42zd.xexx8yu.xyri2b.x18d9i69.x1c1uobl.x11g6tue.x1a2a7pz.x1ypdohk.x1ph7ams.x17f7hit.xuv8nkb.x1hl2dhg.xt0b8zv.x1eo1aoc.xbvygy2.x1wp9yj1.xv854yx.x1k74hu9.xp30eni.xrys4gj.xhmieyt",
+      )?.textContent,
+    ) || 0;
+  const modalClass =
+    ".x1n2onr6.x1n2onr6.xupqr0c.x78zum5.x1r8uery.x1iyjqo2.xdt5ytf.x6ikm8r.x1odjw0f.x1hc1fzr.x1anedsm.x1280gxy";
+
+  const targetElement = document.querySelector(modalClass);
+
+  if (targetElement) {
+    console.log("WhatsApp modal found!");
+    console.log(`Group - ${groupName} || Participants - ${participantsNumber}`);
+
+    if (!document.getElementById("whatsapp-extension-buttons")) {
+      const ui = createButtonUI();
+
+      // Close button handler
+      ui.closeBtn.addEventListener("click", function () {
+        terminateEverything(ui);
+      });
+
+      ui.startBtn.addEventListener("click", function () {
+        const modal = document.querySelector(modalClass);
+        if (modal) {
+          if (activeAutoScroll) activeAutoScroll.stop();
+          activeAutoScroll = autoScrollWithInfiniteLoad(
+            modal,
+            GrabWhatsAppGroupParticipantsNumbers,
+          );
+          activeAutoScroll.start();
+          ui.status.textContent = "🔄 Scrolling...";
+          ui.status.style.color = "#075e54";
+          ui.startBtn.textContent = "▶ Running...";
+          ui.startBtn.style.background = "#28a745";
+          console.log("Started auto-scrolling");
+        } else {
+          ui.status.textContent = "❌ Modal not found!";
+          ui.status.style.color = "#dc3545";
+        }
+      });
+
+      ui.stopBtn.addEventListener("click", function () {
+        if (activeAutoScroll) {
+          activeAutoScroll.stop();
+          activeAutoScroll = null;
+          ui.status.textContent = "⏸ Stopped";
+          ui.status.style.color = "#dc3545";
+          ui.startBtn.textContent = "▶ Start Scrolling";
+          ui.startBtn.style.background = "#075e54";
+          console.log("Stopped auto-scrolling");
+          console.log(`Total contacts collected: ${storage.size}`);
+        }
+      });
+
+      ui.downloadBtn.addEventListener("click", function () {
+        if (storage.size === 0) {
+          alert("No contacts found! Run the scraper first.");
+          return;
+        }
+
+        const data = Array.from(storage.values());
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `whatsapp-contacts-${groupName || "group"}-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        ui.status.textContent = `📥 Downloaded ${storage.size} contacts`;
+        ui.status.style.color = "#28a745";
+
+        setTimeout(() => {
+          storage = new Map();
+          console.log("Storage Reset");
+        }, 3000);
+      });
+
+      // Update contact count periodically
+      const countInterval = setInterval(() => {
+        ui.count.textContent = `Contacts: ${storage.size}`;
+      }, 2000);
+      globalIntervals.push(countInterval);
+
+      console.log("Buttons created!");
+    }
+
+    if (
+      participantsNumber !== 0 &&
+      participantsNumber == storage.size &&
+      storage.size > 0
+    ) {
+      if (activeAutoScroll) {
+        activeAutoScroll.stop();
+        activeAutoScroll = null;
+        const ui = document.getElementById("whatsapp-extension-buttons");
+        if (ui) {
+          const status = ui.querySelector("#whatsapp-status");
+          const startBtn = ui.querySelector("#whatsapp-start-btn");
+          if (status) {
+            status.textContent = "✅ All participants collected!";
+            status.style.color = "#28a745";
+          }
+          if (startBtn) {
+            startBtn.textContent = "▶ Start Scrolling";
+            startBtn.style.background = "#075e54";
+          }
+        }
+        console.log(`All Participants (${storage.size}) parsed`);
+      }
+    }
+
+    // REMOVED: mainObserver.disconnect();
+    // This line was stopping the observer from watching for the modal again
+  }
+});
+
+// Start monitoring
+mainObserver.observe(document.body, {
+  childList: true,
+  subtree: true,
+});
+
+console.log("Extension ready. Waiting for WhatsApp...");
